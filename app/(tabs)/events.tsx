@@ -1,8 +1,10 @@
+// app/(tabs)/explore.tsx
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -23,11 +25,30 @@ interface EventsResponse {
   data: EventItem[];
 }
 
+type FilterKey = "upcoming" | "ongoing" | "past";
+
+const FILTERS: { key: FilterKey; label: string }[] = [
+  { key: "upcoming", label: "Upcoming" },
+  { key: "ongoing", label: "Ongoing" },
+  { key: "past", label: "Past" },
+];
+
+function getEventStatus(event: EventItem): FilterKey {
+  const now = new Date();
+  const start = new Date(`${event.date}T${event.time_start}`);
+  const end = new Date(`${event.date}T${event.time_end}`);
+
+  if (now < start) return "upcoming";
+  if (now > end) return "past";
+  return "ongoing";
+}
+
 export default function EventsScreen() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<FilterKey>("upcoming");
 
   const loadEvents = useCallback(async () => {
     try {
@@ -49,19 +70,43 @@ export default function EventsScreen() {
     setRefreshing(false);
   }
 
+  const filteredEvents = useMemo(
+    () => events.filter((e) => getEventStatus(e) === filter),
+    [events, filter],
+  );
+
   if (loading) return <ActivityIndicator size="large" style={{ flex: 1 }} />;
 
   return (
     <View style={styles.container}>
+      <View style={styles.tabBar}>
+        {FILTERS.map((f) => (
+          <Pressable
+            key={f.key}
+            style={[styles.tab, filter === f.key && styles.tabActive]}
+            onPress={() => setFilter(f.key)}
+          >
+            <Text
+              style={[styles.tabText, filter === f.key && styles.tabTextActive]}
+            >
+              {f.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       {error && <Text style={styles.error}>{error}</Text>}
+
       <FlatList
-        data={events}
+        data={filteredEvents}
         keyExtractor={(item) => String(item.id)}
         contentContainerStyle={{ padding: 16, gap: 12 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        ListEmptyComponent={<Text style={styles.empty}>No events yet.</Text>}
+        ListEmptyComponent={
+          <Text style={styles.empty}>No {filter} events.</Text>
+        }
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
@@ -83,6 +128,18 @@ export default function EventsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f8fafc" },
+  tabBar: {
+    flexDirection: "row",
+    backgroundColor: "#fff",
+    margin: 16,
+    marginBottom: 0,
+    borderRadius: 10,
+    padding: 4,
+  },
+  tab: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
+  tabActive: { backgroundColor: "#2563eb" },
+  tabText: { color: "#64748b", fontWeight: "600", fontSize: 13 },
+  tabTextActive: { color: "#fff" },
   card: {
     backgroundColor: "#fff",
     borderRadius: 12,
