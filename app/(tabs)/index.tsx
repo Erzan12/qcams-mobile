@@ -1,98 +1,136 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
-
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import {
+  Alert,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function HomeScreen() {
-  return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+  const { user, logout } = useAuth();
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+  function confirmLogout() {
+    Alert.alert("Log Out", "Are you sure you want to log out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          await logout();
+          router.replace("/(auth)/login");
+        },
+      },
+    ]);
+  }
+
+  const profile = user?.profile as Record<string, string> | undefined;
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ padding: 20 }}
+    >
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.greeting}>Welcome back,</Text>
+          <Text style={styles.name}>{user?.name}</Text>
+        </View>
+        <Pressable onPress={confirmLogout} hitSlop={12}>
+          <Ionicons name="log-out-outline" size={26} color="#dc2626" />
+        </Pressable>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>My Details</Text>
+        <DetailRow label="Role" value={user?.role} />
+        {profile?.id_number && (
+          <DetailRow label="ID Number" value={profile.id_number} />
+        )}
+        {profile?.department && (
+          <DetailRow label="Department" value={profile.department} />
+        )}
+        {profile?.section && (
+          <DetailRow label="Section" value={profile.section} />
+        )}
+        {profile?.year_level && (
+          <DetailRow label="Year Level" value={profile.year_level} />
+        )}
+        {profile?.email && <DetailRow label="Email" value={profile.email} />}
+      </View>
+
+      {user?.role !== "admin" && (
+        <Pressable
+          style={styles.qrShortcut}
+          onPress={() => router.push("/(tabs)/my-qrcode")}
+        >
+          <Ionicons name="qr-code" size={22} color="#fff" />
+          <Text style={styles.qrShortcutText}>Show My QR Code</Text>
+        </Pressable>
+      )}
+    </ScrollView>
+  );
+}
+
+function DetailRow({
+  label,
+  value,
+}: {
+  label: string;
+  value?: string | number;
+}) {
+  if (!value) return null;
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  container: { flex: 1, backgroundColor: "#f8fafc" },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  greeting: { fontSize: 15, color: "#64748b" },
+  name: { fontSize: 22, fontWeight: "700", color: "#0f172a" },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    elevation: 1,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: "600",
+    marginBottom: 12,
+    color: "#334155",
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  rowLabel: { color: "#64748b" },
+  rowValue: { fontWeight: "600", color: "#0f172a" },
+  qrShortcut: {
+    flexDirection: "row",
     gap: 8,
+    backgroundColor: "#2563eb",
+    padding: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  qrShortcutText: { color: "#fff", fontWeight: "600", fontSize: 15 },
 });
