@@ -62,6 +62,15 @@ export default function HomeScreen() {
         {profile?.email && <DetailRow label="Email" value={profile.email} />}
       </View>
 
+      {/* {user?.role !== "admin" && (
+        <Pressable
+          style={styles.qrShortcut}
+          onPress={() => router.push("/(tabs)/my-qrcode")}
+        >
+          <Ionicons name="qr-code" size={22} color="#fff" />
+          <Text style={styles.qrShortcutText}>Show My QR Code</Text>
+        </Pressable>
+      )} */}
       {user?.role !== "admin" && (
         <Pressable
           style={styles.qrShortcut}
@@ -71,6 +80,12 @@ export default function HomeScreen() {
           <Text style={styles.qrShortcutText}>Show My QR Code</Text>
         </Pressable>
       )}
+      {/* {(user?.role === 'admin' || user?.role === 'faculty') && (
+        <Pressable style={[styles.qrShortcut, { backgroundColor: '#059669', marginTop: 12 }]} onPress={() => router.push('/(tabs)/scan')}>
+          <Ionicons name="scan" size={22} color="#fff" />
+          <Text style={styles.qrShortcutText}>Scan Attendance</Text>
+        </Pressable>
+      )} */}
     </ScrollView>
   );
 }
