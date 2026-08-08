@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
@@ -36,6 +37,10 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.iconWrap}>
+        <Ionicons name="qr-code" size={56} color="#2563eb" />
+      </View>
+
       <Text style={styles.title}>QCAMS Login</Text>
 
       <TextInput
@@ -92,6 +97,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
   },
+  iconWrap: { alignItems: "center", marginBottom: 8 },
   buttonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
   error: { color: "red", textAlign: "center" },
 });
