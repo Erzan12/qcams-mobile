@@ -1,6 +1,11 @@
+import { apiFetch } from "@/api/client";
+import { AttendanceRecord, PaginatedResponse } from "@/api/types";
+import { AttendanceStatusBadge } from "@/components/AttendanceStatusBadge";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -12,6 +17,16 @@ import { useAuth } from "../../hooks/useAuth";
 
 export default function HomeScreen() {
   const { user, logout } = useAuth();
+  const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(true);
+
+  useEffect(() => {
+    if (user?.role === "admin") return; // admins has no attendance records
+    apiFetch<PaginatedResponse<AttendanceRecord>>("/my-attendance?per_page=5")
+      .then((res) => setAttendance(res.data))
+      .catch(() => {})
+      .finally(() => setAttendanceLoading(false));
+  }, [user]);
 
   function confirmLogout() {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -61,6 +76,33 @@ export default function HomeScreen() {
         )}
         {profile?.email && <DetailRow label="Email" value={profile.email} />}
       </View>
+
+      {user?.role !== "admin" && (
+        <View style={[styles.card, { marginTop: 20 }]}>
+          <View style={styles.attendanceHeader}>
+            <Text style={styles.cardTitle}>Event Participation</Text>
+            <Pressable onPress={() => router.push("/attendance")}>
+              <Text style={styles.viewAll}>View All</Text>
+            </Pressable>
+          </View>
+
+          {attendanceLoading ? (
+            <ActivityIndicator />
+          ) : attendance.length === 0 ? (
+            <Text style={styles.emptyText}>No event attendance yet.</Text>
+          ) : (
+            attendance.map((record) => (
+              <View key={record.id} style={styles.attendanceRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.eventTitle}>{record.event.title}</Text>
+                  <Text style={styles.eventDate}>{record.event.date}</Text>
+                </View>
+                <AttendanceStatusBadge status={record.is_present} />
+              </View>
+            ))
+          )}
+        </View>
+      )}
 
       {/* {user?.role !== "admin" && (
         <Pressable
@@ -148,4 +190,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   qrShortcutText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  attendanceHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  viewAll: { color: "#2563eb", fontWeight: "600", fontSize: 13 },
+  attendanceRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f1f5f9",
+  },
+  eventTitle: { fontWeight: "600", color: "#0f172a" },
+  eventDate: { color: "#64748b", fontSize: 12, marginTop: 2 },
+  emptyText: { color: "#94a3b8", textAlign: "center", paddingVertical: 12 },
 });
