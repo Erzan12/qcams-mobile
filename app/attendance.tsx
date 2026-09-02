@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     ActivityIndicator,
     FlatList,
@@ -26,12 +26,12 @@ export default function AttendanceScreen() {
     return res.data;
   }, []);
 
-  useState(() => {
+  useEffect(() => {
     loadPage(1).then((data) => {
       setRecords(data);
       setLoading(false);
     });
-  });
+  }, []);
 
   async function loadMore() {
     if (loadingMore || page >= lastPage) return;
