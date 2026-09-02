@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -107,7 +108,15 @@ export default function EventsScreen() {
           <Text style={styles.empty}>No {filter} events.</Text>
         }
         renderItem={({ item }) => (
-          <View style={styles.card}>
+          <Pressable
+            style={styles.card}
+            onPress={() =>
+              router.push({
+                pathname: "/event/[id]",
+                params: { id: String(item.id) },
+              })
+            }
+          >
             <View style={styles.cardHeader}>
               <Ionicons name="calendar-outline" size={20} color="#2563eb" />
               <Text style={styles.title}>{item.title}</Text>
@@ -118,7 +127,7 @@ export default function EventsScreen() {
             <Text style={styles.description} numberOfLines={2}>
               {item.description}
             </Text>
-          </View>
+          </Pressable>
         )}
       />
     </View>
