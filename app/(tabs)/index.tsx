@@ -2,8 +2,8 @@ import { apiFetch } from "@/api/client";
 import { AttendanceRecord, PaginatedResponse } from "@/api/types";
 import { AttendanceStatusBadge } from "@/components/AttendanceStatusBadge";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -16,6 +16,7 @@ import {
 import { useAuth } from "../../hooks/useAuth";
 
 export default function HomeScreen() {
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuth();
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([]);
   const [attendanceLoading, setAttendanceLoading] = useState(true);
@@ -27,6 +28,14 @@ export default function HomeScreen() {
       .catch(() => {})
       .finally(() => setAttendanceLoading(false));
   }, [user]);
+
+  useFocusEffect(
+    useCallback(() => {
+      apiFetch<{ count: number }>("/notifications/unread-count")
+        .then((res) => setUnreadCount(res.count))
+        .catch(() => {});
+    }, []),
+  );
 
   function confirmLogout() {
     Alert.alert("Log Out", "Are you sure you want to log out?", [
@@ -54,9 +63,27 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>Welcome back,</Text>
           <Text style={styles.name}>{user?.name}</Text>
         </View>
-        <Pressable onPress={confirmLogout} hitSlop={12}>
-          <Ionicons name="log-out-outline" size={26} color="#dc2626" />
-        </Pressable>
+        <View style={{ flexDirection: "row", gap: 18, alignItems: "center" }}>
+          <Pressable onPress={() => router.push("/notifications")} hitSlop={12}>
+            <View>
+              <Ionicons
+                name="notifications-outline"
+                size={24}
+                color="#334155"
+              />
+              {unreadCount > 0 && (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </Pressable>
+          <Pressable onPress={confirmLogout} hitSlop={12}>
+            <Ionicons name="log-out-outline" size={26} color="#dc2626" />
+          </Pressable>
+        </View>
       </View>
 
       <View style={styles.card}>
@@ -149,6 +176,19 @@ function DetailRow({
 }
 
 const styles = StyleSheet.create({
+  badge: {
+    position: "absolute",
+    top: -6,
+    right: -8,
+    backgroundColor: "#dc2626",
+    borderRadius: 999,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
   container: { flex: 1, backgroundColor: "#f8fafc" },
   header: {
     flexDirection: "row",
