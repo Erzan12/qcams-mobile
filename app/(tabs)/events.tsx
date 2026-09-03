@@ -52,16 +52,16 @@ function getEventStatus(event: EventItem): FilterKey {
   // });
 
   if (now < start) {
-    console.log(event.title, "=> UPCOMING");
+    // console.log(event.title, "=> UPCOMING");
     return "upcoming";
   }
 
   if (now > end) {
-    console.log(event.title, "=> PAST");
+    // console.log(event.title, "=> PAST");
     return "past";
   }
 
-  console.log(event.title, "=> ONGOING");
+  // console.log(event.title, "=> ONGOING");
   return "ongoing";
 }
 
