@@ -38,8 +38,30 @@ function getEventStatus(event: EventItem): FilterKey {
   const start = new Date(`${event.date}T${event.time_start}`);
   const end = new Date(`${event.date}T${event.time_end}`);
 
-  if (now < start) return "upcoming";
-  if (now > end) return "past";
+  // console.log("EVENT STATUS:", {
+  //   title: event.title,
+  //   now: now.toString(),
+  //   date: event.date,
+  //   time_start: event.time_start,
+  //   time_end: event.time_end,
+  //   start: start.toString(),
+  //   end: end.toString(),
+  //   startTimestamp: start.getTime(),
+  //   endTimestamp: end.getTime(),
+  //   nowTimestamp: now.getTime(),
+  // });
+
+  if (now < start) {
+    console.log(event.title, "=> UPCOMING");
+    return "upcoming";
+  }
+
+  if (now > end) {
+    console.log(event.title, "=> PAST");
+    return "past";
+  }
+
+  console.log(event.title, "=> ONGOING");
   return "ongoing";
 }
 
@@ -53,6 +75,9 @@ export default function EventsScreen() {
   const loadEvents = useCallback(async () => {
     try {
       const res = await apiFetch<EventsResponse>("/events");
+
+      // console.log("EVENTS FROM API:", JSON.stringify(res.data, null, 2));
+
       setEvents(res.data);
       setError(null);
     } catch (e) {
