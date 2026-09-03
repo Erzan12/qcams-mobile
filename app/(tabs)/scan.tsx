@@ -151,9 +151,9 @@ export default function ScanScreen() {
 
     return (
       <View style={styles.pickerContainer}>
-        <Text style={styles.pickerTitle}>Select Today's Event</Text>
+        <Text style={styles.pickerTitle}>Select Today&apos;s Event</Text>
         <Text style={styles.pickerSubtitle}>
-          Choose which event you're scanning attendance for.
+          Choose which event you&apos;re scanning attendance for.
         </Text>
         <FlatList
           data={todaysEvents}
