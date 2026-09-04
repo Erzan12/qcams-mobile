@@ -4,7 +4,7 @@
     "slug": "qcams-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/qcams-app-icon.png",
     "scheme": "qcamsmobile",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
