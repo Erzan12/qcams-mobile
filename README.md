@@ -22,7 +22,7 @@ QCAMS already runs as a full Laravel web app (Blade dashboard, PWA support). Thi
 
 ## Tech Stack
 
-| Layer | Tec      | Technology                         |
+| Layer            | Technology                         |
 | ---------------- | ---------------------------------- |
 | Mobile app       | Expo (Expo Router, TypeScript)     |
 | Navigation       | `expo-router` (file-based routing) |
