@@ -32,8 +32,13 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       apiFetch<{ count: number }>("/notifications/unread-count")
-        .then((res) => setUnreadCount(res.count))
-        .catch(() => {});
+        .then((res) => {
+          setUnreadCount(res.count);
+        })
+        .catch((error) => {
+          console.log("❌ Failed to fetch unread count:", error);
+          setUnreadCount(0);
+        });
     }, []),
   );
 
@@ -63,7 +68,14 @@ export default function HomeScreen() {
           <Text style={styles.greeting}>Welcome back,</Text>
           <Text style={styles.name}>{user?.name}</Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 18, alignItems: "center" }}>
+
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 18,
+            alignItems: "center",
+          }}
+        >
           <Pressable onPress={() => router.push("/notifications")} hitSlop={12}>
             <View>
               <Ionicons
@@ -71,15 +83,17 @@ export default function HomeScreen() {
                 size={24}
                 color="#334155"
               />
+
               {unreadCount > 0 && (
                 <View style={styles.badge}>
                   <Text style={styles.badgeText}>
-                    {unreadCount > 9 ? "9+" : unreadCount}
+                    {unreadCount >= 10 ? "10+" : unreadCount}
                   </Text>
                 </View>
               )}
             </View>
           </Pressable>
+
           <Pressable onPress={confirmLogout} hitSlop={12}>
             <Ionicons name="log-out-outline" size={26} color="#dc2626" />
           </Pressable>
@@ -131,15 +145,6 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* {user?.role !== "admin" && (
-        <Pressable
-          style={styles.qrShortcut}
-          onPress={() => router.push("/(tabs)/my-qrcode")}
-        >
-          <Ionicons name="qr-code" size={22} color="#fff" />
-          <Text style={styles.qrShortcutText}>Show My QR Code</Text>
-        </Pressable>
-      )} */}
       {user?.role !== "admin" && (
         <Pressable
           style={styles.qrShortcut}
@@ -149,12 +154,6 @@ export default function HomeScreen() {
           <Text style={styles.qrShortcutText}>Show My QR Code</Text>
         </Pressable>
       )}
-      {/* {(user?.role === 'admin' || user?.role === 'faculty') && (
-        <Pressable style={[styles.qrShortcut, { backgroundColor: '#059669', marginTop: 12 }]} onPress={() => router.push('/(tabs)/scan')}>
-          <Ionicons name="scan" size={22} color="#fff" />
-          <Text style={styles.qrShortcutText}>Scan Attendance</Text>
-        </Pressable>
-      )} */}
     </ScrollView>
   );
 }
@@ -178,17 +177,24 @@ function DetailRow({
 const styles = StyleSheet.create({
   badge: {
     position: "absolute",
-    top: -6,
-    right: -8,
-    backgroundColor: "#dc2626",
-    borderRadius: 999,
+    top: -8,
+    right: -10,
     minWidth: 18,
     height: 18,
     paddingHorizontal: 4,
-    justifyContent: "center",
+    borderRadius: 9,
+    backgroundColor: "#dc2626",
     alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#f8fafc",
   },
-  badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  badgeText: {
+    color: "#fff",
+    fontSize: 9,
+    fontWeight: "700",
+    lineHeight: 12,
+  },
   container: { flex: 1, backgroundColor: "#f8fafc" },
   header: {
     flexDirection: "row",

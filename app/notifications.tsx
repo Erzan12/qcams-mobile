@@ -1,13 +1,16 @@
+// app/notifications.tsx
+
 import { Ionicons } from "@expo/vector-icons";
 import { Stack, router, useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { apiFetch } from "../api/client";
@@ -26,7 +29,10 @@ const TYPE_ICONS: Record<
 
 const TYPE_COLORS: Record<
   NotificationItem["type"],
-  { background: string; icon: string }
+  {
+    background: string;
+    icon: string;
+  }
 > = {
   added_to_event: {
     background: "#eff6ff",
@@ -55,11 +61,16 @@ function timeAgo(dateStr: string) {
   const mins = Math.floor(diffMs / 60000);
 
   if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+
+  if (mins < 60) {
+    return `${mins}m ago`;
+  }
 
   const hours = Math.floor(mins / 60);
 
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) {
+    return `${hours}h ago`;
+  }
 
   return `${Math.floor(hours / 24)}d ago`;
 }
@@ -96,33 +107,73 @@ export default function NotificationsScreen() {
     }
   }
 
-  async function markRead(notif: NotificationItem) {
-    if (notif.read_at) return;
+  // --------------------------------------------------
+  // MARK AS READ
+  // --------------------------------------------------
 
+  async function markRead(notification: NotificationItem) {
+    if (notification.read_at) return;
+
+    // Optimistic UI update
     setItems((prev) =>
-      prev.map((n) =>
-        n.id === notif.id ? { ...n, read_at: new Date().toISOString() } : n,
+      prev.map((item) =>
+        item.id === notification.id
+          ? {
+              ...item,
+              read_at: new Date().toISOString(),
+            }
+          : item,
       ),
     );
 
     try {
-      await apiFetch(`/notifications/${notif.id}/read`, {
+      await apiFetch(`/notifications/${notification.id}/read`, {
         method: "POST",
       });
     } catch {
-      setItems((prev) =>
-        prev.map((n) => (n.id === notif.id ? { ...n, read_at: null } : n)),
-      );
+      load();
     }
   }
+
+  // --------------------------------------------------
+  // MARK AS UNREAD
+  // --------------------------------------------------
+
+  async function markUnread(notification: NotificationItem) {
+    if (!notification.read_at) return;
+
+    // Optimistic UI update
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === notification.id
+          ? {
+              ...item,
+              read_at: null,
+            }
+          : item,
+      ),
+    );
+
+    try {
+      await apiFetch(`/notifications/${notification.id}/unread`, {
+        method: "POST",
+      });
+    } catch {
+      load();
+    }
+  }
+
+  // --------------------------------------------------
+  // MARK ALL AS READ
+  // --------------------------------------------------
 
   async function markAllRead() {
     const now = new Date().toISOString();
 
     setItems((prev) =>
-      prev.map((n) => ({
-        ...n,
-        read_at: n.read_at ?? now,
+      prev.map((item) => ({
+        ...item,
+        read_at: item.read_at ?? now,
       })),
     );
 
@@ -135,54 +186,100 @@ export default function NotificationsScreen() {
     }
   }
 
-  async function handleNotificationPress(notification: NotificationItem) {
-    await markRead(notification);
+  // --------------------------------------------------
+  // DELETE
+  // --------------------------------------------------
 
-    /*
-     * If the notification belongs to an event,
-     * navigate directly to that event.
-     *
-     * Example:
-     *
-     * notification.event_id = 12
-     */
+  function confirmDelete(notification: NotificationItem) {
+    Alert.alert(
+      "Delete Notification",
+      "Are you sure you want to delete this notification?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () => deleteNotification(notification),
+        },
+      ],
+    );
+  }
 
-    if (
-      notification.type === "added_to_event" &&
-      "event_id" in notification &&
-      notification.event_id
-    ) {
-      router.push(`/event/${notification.event_id}`);
-      return;
+  async function deleteNotification(notification: NotificationItem) {
+    // Optimistic UI update
+    setItems((prev) => prev.filter((item) => item.id !== notification.id));
+
+    try {
+      await apiFetch(`/notifications/${notification.id}`, {
+        method: "DELETE",
+      });
+    } catch {
+      // Restore list if deletion failed
+      load();
+
+      Alert.alert(
+        "Delete Failed",
+        "The notification could not be deleted. Please try again.",
+      );
     }
   }
 
-  function getActionLabel(notification: NotificationItem) {
-    switch (notification.type) {
-      case "added_to_event":
-        return "View Event";
+  // --------------------------------------------------
+  // OPEN NOTIFICATION
+  // --------------------------------------------------
 
-      case "login_open":
-        return "View Attendance";
+  async function handleNotificationPress(notification: NotificationItem) {
+    // Mark it read first
+    await markRead(notification);
 
-      case "late_warning":
-        return "View Details";
-
-      case "login_cutoff":
-        return "View Details";
-
-      case "logout_open":
-        return "View Details";
-
-      default:
-        return "View";
+    // Navigate based on notification type
+    if (notification.event_id) {
+      router.push(`/event/${notification.event_id}`);
+      return;
     }
+
+    // If there's no event attached,
+    // just leave it marked as read.
+  }
+
+  // --------------------------------------------------
+  // ACTION MENU
+  // --------------------------------------------------
+
+  function showActions(notification: NotificationItem) {
+    const isRead = !!notification.read_at;
+
+    Alert.alert(notification.title, undefined, [
+      {
+        text: isRead ? "Mark as Unread" : "Mark as Read",
+        onPress: () => {
+          if (isRead) {
+            markUnread(notification);
+          } else {
+            markRead(notification);
+          }
+        },
+      },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => confirmDelete(notification),
+      },
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+    ]);
   }
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2563eb" />
+
         <Text style={styles.loadingText}>Loading notifications...</Text>
       </View>
     );
@@ -196,6 +293,7 @@ export default function NotificationsScreen() {
         <Stack.Screen
           options={{
             title: "Notifications",
+
             headerRight: () =>
               unreadCount > 0 ? (
                 <Pressable onPress={markAllRead} hitSlop={10}>
@@ -253,7 +351,7 @@ export default function NotificationsScreen() {
               <Text style={styles.emptyTitle}>No notifications</Text>
 
               <Text style={styles.emptyText}>
-                You're all caught up! New notifications will appear here.
+                You&apos;re all caught up! New notifications will appear here.
               </Text>
             </View>
           }
@@ -264,21 +362,22 @@ export default function NotificationsScreen() {
 
             return (
               <View style={[styles.card, !item.read_at && styles.cardUnread]}>
+                {/* Main notification */}
                 <Pressable
                   style={styles.cardMain}
                   onPress={() => handleNotificationPress(item)}
                 >
-                  {/* Icon */}
                   <View
                     style={[
                       styles.iconContainer,
-                      { backgroundColor: colors.background },
+                      {
+                        backgroundColor: colors.background,
+                      },
                     ]}
                   >
                     <Ionicons name={icon} size={21} color={colors.icon} />
                   </View>
 
-                  {/* Content */}
                   <View style={styles.content}>
                     <View style={styles.titleRow}>
                       <Text
@@ -299,15 +398,35 @@ export default function NotificationsScreen() {
                   </View>
                 </Pressable>
 
-                {/* Action */}
-                <Pressable
-                  style={styles.actionButton}
-                  onPress={() => handleNotificationPress(item)}
-                >
-                  <Text style={styles.actionText}>{getActionLabel(item)}</Text>
+                {/* Bottom actions */}
+                <View style={styles.actionRow}>
+                  {item.event_id && (
+                    <Pressable
+                      style={styles.viewButton}
+                      onPress={() => handleNotificationPress(item)}
+                    >
+                      <Text style={styles.viewButtonText}>View Event</Text>
 
-                  <Ionicons name="chevron-forward" size={16} color="#2563eb" />
-                </Pressable>
+                      <Ionicons
+                        name="chevron-forward"
+                        size={15}
+                        color="#2563eb"
+                      />
+                    </Pressable>
+                  )}
+
+                  <Pressable
+                    style={styles.moreButton}
+                    onPress={() => showActions(item)}
+                    hitSlop={8}
+                  >
+                    <Ionicons
+                      name="ellipsis-horizontal"
+                      size={20}
+                      color="#64748b"
+                    />
+                  </Pressable>
+                </View>
               </View>
             );
           }}
@@ -380,7 +499,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 
-  /* Notification Card */
+  /* Card */
 
   card: {
     backgroundColor: "#fff",
@@ -393,7 +512,6 @@ const styles = StyleSheet.create({
   },
 
   cardUnread: {
-    backgroundColor: "#fff",
     borderColor: "#dbeafe",
   },
 
@@ -453,24 +571,38 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
 
-  /* Action */
+  /* Actions */
 
-  actionButton: {
+  actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "flex-end",
+    justifyContent: "space-between",
     marginTop: 12,
     paddingTop: 10,
+    paddingLeft: 54,
     borderTopWidth: 1,
     borderTopColor: "#f1f5f9",
-    paddingLeft: 54,
   },
 
-  actionText: {
+  viewButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  viewButtonText: {
     color: "#2563eb",
     fontSize: 13,
     fontWeight: "600",
-    marginRight: 3,
+    marginRight: 2,
+  },
+
+  moreButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#f8fafc",
   },
 
   markAllText: {
@@ -479,7 +611,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  /* Empty State */
+  /* Empty */
 
   emptyContainer: {
     alignItems: "center",
