@@ -40,3 +40,26 @@ export interface NotificationItem {
   read_at: string | null;
   created_at: string;
 }
+
+export type UserRole = "admin" | "student" | "faculty";
+
+export interface AuthUser {
+  id: number;
+  username: string;
+  account_type: number;
+  role: UserRole;
+  name: string;
+  profile: Record<string, unknown>;
+}
+
+export interface LoginResponse {
+  token: string;
+  user: AuthUser;
+}
+
+export interface AuthContextValue {
+  user: AuthUser | null;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<AuthUser>;
+  logout: () => Promise<void>;
+}

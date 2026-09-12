@@ -1,3 +1,4 @@
+import { AuthContextValue, AuthUser, LoginResponse } from "@/api/types";
 import * as SecureStore from "expo-secure-store";
 import {
   createContext,
@@ -7,29 +8,6 @@ import {
   useState,
 } from "react";
 import { apiFetch } from "../api/client";
-
-export type UserRole = "admin" | "student" | "faculty";
-
-export interface AuthUser {
-  id: number;
-  username: string;
-  account_type: number;
-  role: UserRole;
-  name: string;
-  profile: Record<string, unknown>;
-}
-
-interface LoginResponse {
-  token: string;
-  user: AuthUser;
-}
-
-interface AuthContextValue {
-  user: AuthUser | null;
-  isLoading: boolean;
-  login: (username: string, password: string) => Promise<AuthUser>;
-  logout: () => Promise<void>;
-}
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
