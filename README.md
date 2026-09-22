@@ -22,8 +22,8 @@ QCAMS already runs as a full Laravel web app (Blade dashboard, PWA support). Thi
 
 ## Tech Stack
 
-| Layer            | Tec                                | Technology |
-| ---------------- | ---------------------------------- | ---------- |
+| Layer            | Technology                         |
+| ---------------- | ---------------------------------- |
 | Mobile app       | Expo (Expo Router, TypeScript)     |
 | Navigation       | `expo-router` (file-based routing) |
 | Camera / QR scan | `expo-camera`                      |
@@ -173,8 +173,6 @@ Part of a broader mobile-first migration effort covering:
 All three share the same architecture pattern: existing Laravel backend + Expo/React Native mobile client over a Sanctum-authenticated JSON API.
 
 ### 👤 Author
-
 **Erzan**
-
-- **GitHub: <https://github.com/Erzan12>**
-- **Portfolio: <https://erzan-dev.vercel.app/>**
+* **GitHub: https://github.com/Erzan12**
+* **Portfolio: https://erzan-dev.vercel.app/**
