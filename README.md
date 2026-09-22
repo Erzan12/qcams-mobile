@@ -172,7 +172,7 @@ Part of a broader mobile-first migration effort covering:
 
 All three share the same architecture pattern: existing Laravel backend + Expo/React Native mobile client over a Sanctum-authenticated JSON API.
 
-### 👤 Author
+## 👤 Author
 **Erzan**
 * **GitHub: https://github.com/Erzan12**
 * **Portfolio: https://erzan-dev.vercel.app/**
